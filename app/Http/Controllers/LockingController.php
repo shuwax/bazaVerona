@@ -6,6 +6,7 @@ use App\LockHistory;
 use App\Record;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class LockingController extends Controller
@@ -69,5 +70,101 @@ class LockingController extends Controller
         ])->get();
 
         return datatables($lockHistory)->make(true);
+    }
+
+    public function lockMultiAjax(Request $request){
+        $file = $request->file('fileWithPhoneNumbers');
+        $fileOpened = fopen($file->getPathname(),'r');
+        $count = 0;
+        $tempDataArr = [];
+        $dataArr = [];
+        while( $data = fgetcsv($fileOpened)){
+            if($count < 5){
+                array_push($tempDataArr, $data);
+            }
+            /* if($count > 0 && $count < 1000000){
+                 array_push($dataArr, $data[0]);
+             }*/
+            $count++;
+        }
+        fclose($fileOpened);
+
+        return ['dataArr' => $tempDataArr, 'count' => $count];//, 'data' => $dataArr];
+
+    }
+
+    public function lockMultiSecondAjax(Request $request){
+        $file = $request->file('fileWithPhoneNumbers');
+        $fileOpened = fopen($file->getPathname(),'r');
+        $actualRecord = $request->actualRecord;
+        $step = 10000;
+        $count = 1;
+        $data = fgetcsv($fileOpened);
+        $phoneIndex = null;
+        foreach ($data as $index => $column){
+            if(strtolower($column) == 'telefon'){
+                $phoneIndex = $index;
+                break;
+            }
+        };
+        $phonesArray = [];
+        while( $data = fgetcsv($fileOpened)){
+            if($count >= $actualRecord){
+                if($count < $actualRecord + $step){
+                    array_push($phonesArray,intval($data[$phoneIndex]));
+                }else{
+                    break;
+                }
+            }
+            $count++;
+        }
+        fclose($fileOpened);
+        $records = Record::whereIn('telefon', $phonesArray)->get();//->select('telefon','idbaza', DB::raw('"'.time().'"'), DB::raw('"'.time().'"'));
+
+        $notFoundPhonesToBlock = collect(array_map(function ($value){
+            return (object)['telefon' => $value];
+        }, $phonesArray))->whereNotIn('telefon', $records->pluck('telefon')->toArray())->pluck('telefon')->toArray();
+
+        $notFoundPhonesToBlockCount = count($notFoundPhonesToBlock);
+        if($notFoundPhonesToBlockCount > 0){
+            $lockHistoryStringValues = implode(",", array_map(function($v){
+                return '('.$v.',0,"'.date('Y-m-d H:i:s').'","'.date('Y-m-d H:i:s').'")';
+            },$notFoundPhonesToBlock));
+            $done = [];
+            $recordStringValues = implode(",", array_map(function($v){
+                return '('.$v.', 1)';
+            },$notFoundPhonesToBlock));
+            array_push($done, DB::insert('INSERT INTO lock_history (telefon, id_baza, created_at, updated_at) VALUES '.$lockHistoryStringValues,
+                []));
+            array_push($done, DB::insert('INSERT INTO rekordy (telefon, rekordy.lock) VALUES '.$recordStringValues,
+                []));
+        }
+
+        $foundPhonesToBlock = $records->where('lock',0)->pluck('telefon')->toArray();
+        $foundPhonesToBlockCount = count($foundPhonesToBlock);
+        if($foundPhonesToBlockCount > 0){
+            DB::insert('INSERT INTO lock_history (telefon, id_baza, created_at, updated_at) ('.Record::whereIn('telefon', $foundPhonesToBlock)
+                    ->select('telefon','idbaza', DB::raw('"'.date('Y-m-d H:i:s').'"'), DB::raw('"'.date('Y-m-d H:i:s').'"'))
+                    ->toSql().')',
+                $foundPhonesToBlock);
+            Record::whereIn('telefon', $foundPhonesToBlock)->update([
+                'imie' => '',
+                'nazwisko' => '',
+                'ulica' => '',
+                'nrdomu' => '',
+                'nrmieszkania' => '',
+                'miasto' => '',
+                'idkod' => 0,
+                'idbaza' => 30,
+                'lock' => 1
+            ]);
+        }
+        if($phoneIndex !== null){
+            return ['actualRecord' => $count,
+                'notFoundPhonesToBlockCount' => $notFoundPhonesToBlockCount,
+                'foundPhonesToBlockCount' => $foundPhonesToBlockCount];
+        }else{
+            return 'error';
+        }
     }
 }

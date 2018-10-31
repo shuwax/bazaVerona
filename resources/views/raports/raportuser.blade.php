@@ -20,7 +20,6 @@
 
 @endsection
 @section('content')
-
     <h2>Osobisty raport wykorzystania bazy</h2>
     <p>Uwaga: Raport obejmuje osoby, korzystające z nowego systemu od dnia: 05.04.2017 </p>
 

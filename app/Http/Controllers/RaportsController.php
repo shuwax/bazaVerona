@@ -440,7 +440,7 @@ class RaportsController extends Controller
         if($typ == 1) {
             $employeeship =  $employeeship
                 ->where('date', 'like', $date[0] . '%')
-                ->wherenotin('users_t.id',[1,105,127])
+                ->wherenotin('users_t.id',[1,105,127, 132, 134])
                 ->groupBy('users_t.id')
                 ->groupBy('users_t.dep_id')
                 ->get();
@@ -449,7 +449,7 @@ class RaportsController extends Controller
         {
             $employeeship =  $employeeship
                 ->whereBetween('date', [$date[0] . '%', $date[1] . ' 23:59:59'])
-                ->wherenotin('users_t.id',[1,105,127])
+                ->wherenotin('users_t.id',[1,105,127, 132, 134])
                 ->groupBy('users_t.id')
                 ->groupBy('users_t.dep_id')
                 ->get();
@@ -610,7 +610,7 @@ class RaportsController extends Controller
         if($typ == 1) {
             $employeeres =  $employeeres
                 ->where('date', 'like', $date[0] . '%')
-                ->wherenotin('users_t.id',[1,105,127])
+                ->wherenotin('users_t.id',[1,105,127, 132, 134])
                 ->groupBy('users_t.id')
                 ->groupBy('users_t.dep_id')
                 ->get();
@@ -619,7 +619,7 @@ class RaportsController extends Controller
         {
             $employeeres =  $employeeres
                 ->whereBetween('date', [$date[0] . '%', $date[1] . ' 23:59:59'])
-                ->wherenotin('users_t.id',[1,105,127])
+                ->wherenotin('users_t.id',[1,105,127, 132, 134])
                 ->groupBy('users_t.id')
                 ->groupBy('users_t.dep_id')
                 ->get();
@@ -652,7 +652,7 @@ class RaportsController extends Controller
         if($typ == 1) {
             $employeeship =  $employeeship
                 ->where('date', 'like', $date[0] . '%')
-                ->wherenotin('users_t.id',[1,105,127])
+                ->wherenotin('users_t.id',[1,105,127, 132, 134])
                 ->groupBy('users_t.id')
                 ->groupBy('users_t.dep_id')
                 ->get();
@@ -661,7 +661,7 @@ class RaportsController extends Controller
         {
             $employeeship =  $employeeship
                 ->whereBetween('date', [$date[0] . '%', $date[1] . ' 23:59:59'])
-                ->wherenotin('users_t.id',[1,105,127])
+                ->wherenotin('users_t.id',[1,105,127, 132, 134])
                 ->groupBy('users_t.id')
                 ->groupBy('users_t.dep_id')
                 ->get();
